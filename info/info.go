@@ -1,8 +1,10 @@
 package info
 
 import (
+	"fmt"
 	"os"
 	"runtime/debug"
+	"strings"
 	"time"
 )
 
@@ -48,4 +50,23 @@ func Build(appName, appVersion string) AppInfo {
 		BuildCommit:    buildCommit,
 		BuildTime:      buildTime,
 	}
+}
+
+func (info AppInfo) String() string {
+	fields := []string{
+		fmt.Sprintf("name=%s", info.Name),
+		fmt.Sprintf("version=%s", info.Version),
+		fmt.Sprintf("deployment=%s", info.DeploymentName),
+		fmt.Sprintf("startup=%s", info.StartupTime),
+	}
+
+	if info.BuildCommit != "" {
+		fields = append(fields, fmt.Sprintf("commit=%s", info.BuildCommit))
+	}
+
+	if info.BuildTime != "" {
+		fields = append(fields, fmt.Sprintf("buildTime=%s", info.BuildTime))
+	}
+
+	return strings.Join(fields, " ")
 }
