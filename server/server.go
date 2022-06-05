@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/gookit/config/v2"
-	"github.com/rs/zerolog/log"
 	"github.com/mkorman9/go-commons/web"
+	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
@@ -44,7 +44,7 @@ func (server *Server) Start(errorChannel chan<- error) {
 	go server.runServer(errorChannel)
 }
 
-func (server *Server) Shutdown() {
+func (server *Server) Stop() {
 	log.Debug().Msg("Shutting down HTTP server")
 
 	err := server.HttpServer.Shutdown(context.Background())

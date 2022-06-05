@@ -19,7 +19,7 @@ func BlockThread(errorChannel <-chan error) {
 			log.Error().Err(err).Msg("Unblocking thread due to an error")
 			return
 		case s := <-shutdownSignalsChannel:
-			log.Info().Msgf("Exiting due to a signal: %v", s)
+			log.Info().Msgf("Unblocking thread to a signal: %v", s)
 			return
 		}
 	}
