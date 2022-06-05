@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 	"os"
 	"time"
 )
@@ -44,7 +45,9 @@ func NewClient() (*Client, error) {
 	subscriptionDeleteTimeoutValue := config.Int64("gcp.pubsub.timeouts.subscriptionDelete")
 	publishTimeoutValue := config.Int64("gcp.pubsub.timeouts.publish")
 
-	var options []option.ClientOption
+	options := []option.ClientOption{
+		option.WithGRPCDialOption(grpc.WithReturnConnectionError()),
+	}
 
 	if emulatorEnabled {
 		if emulatorAddress == "" {

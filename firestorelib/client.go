@@ -6,6 +6,7 @@ import (
 	"github.com/gookit/config/v2"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 	"os"
 	"time"
 )
@@ -22,7 +23,9 @@ func NewClient() (*Client, error) {
 	emulatorAddress := config.String("gcp.firestore.emulator.address")
 	connectTimeoutValue := config.Int64("gcp.firestore.timeouts.connect")
 
-	var options []option.ClientOption
+	options := []option.ClientOption{
+		option.WithGRPCDialOption(grpc.WithReturnConnectionError()),
+	}
 
 	if emulatorEnabled {
 		if emulatorAddress == "" {
