@@ -18,6 +18,7 @@ type AppInfo struct {
 	Name           string
 	Version        string
 	DeploymentName string
+	Hostname       string
 	StartupTime    string
 	BuildCommit    string
 	BuildTime      string
@@ -46,6 +47,7 @@ func Build(appName, appVersion string) AppInfo {
 		Name:           appName,
 		Version:        appVersion,
 		DeploymentName: deploymentName,
+		Hostname:       readHostname(),
 		StartupTime:    startupTime.Format(time.RFC3339),
 		BuildCommit:    buildCommit,
 		BuildTime:      buildTime,
@@ -57,6 +59,7 @@ func (info AppInfo) String() string {
 		fmt.Sprintf("name=%s", info.Name),
 		fmt.Sprintf("version=%s", info.Version),
 		fmt.Sprintf("deployment=%s", info.DeploymentName),
+		fmt.Sprintf("hostname=%s", info.Hostname),
 		fmt.Sprintf("startup=%s", info.StartupTime),
 	}
 
@@ -69,4 +72,13 @@ func (info AppInfo) String() string {
 	}
 
 	return strings.Join(fields, " ")
+}
+
+func readHostname() string {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return "localhost"
+	}
+
+	return hostname
 }
