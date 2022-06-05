@@ -24,6 +24,15 @@ func NewClient() (*Client, error) {
 
 	var options []option.ClientOption
 
+	if projectID == "" {
+		projectID = os.Getenv("GOOGLE_PROJECT_ID")
+
+		if projectID == "" {
+			log.Warn().Msg("Empty gcp.projectId, using default")
+			projectID = "default-project-id"
+		}
+	}
+
 	if emulatorEnabled {
 		if emulatorAddress == "" {
 			emulatorAddress = "127.0.0.1:8538"
