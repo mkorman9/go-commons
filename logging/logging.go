@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mkorman9/go-commons/logging/gelf"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/mkorman9/go-commons/logging/gelf"
 )
 
 func Setup(opts ...LoggingOpt) {
@@ -40,7 +40,13 @@ func Setup(opts ...LoggingOpt) {
 	zerolog.ErrorStackMarshaler = stackTraceMarshaller
 
 	// configure default logger
-	defaultWriter, _ := createWriter(&LoggerConfig{Output: "console", Text: &TextConfig{Colors: true}})
+	defaultWriter, _ := createWriter(
+		&LoggerConfig{
+			Output: "console",
+			Format: "text",
+			Text:   &TextConfig{Colors: true},
+		},
+	)
 	log.Logger = log.Output(defaultWriter)
 
 	// try to resolve loggers from configuration

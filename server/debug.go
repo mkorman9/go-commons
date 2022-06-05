@@ -1,25 +1,13 @@
 package server
 
 import (
-	"github.com/gookit/config/v2"
-	"net/http"
-	"time"
-
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
+	"github.com/gookit/config/v2"
+	"github.com/mkorman9/go-commons/info"
 	ginprometheus "github.com/zsais/go-gin-prometheus"
+	"net/http"
 )
-
-type debugAPI struct {
-	metricsPath        string
-	pprofPath          string
-	healthcheckPath    string
-	healthCheckHandler HealthCheckHandlerFunc
-	startupTime        string
-	appName            string
-	appVersion         string
-	deploymentName     string
-}
 
 type healthcheckResponse struct {
 	Status         string `json:"status"`
@@ -27,36 +15,31 @@ type healthcheckResponse struct {
 	AppVersion     string `json:"version,omitempty"`
 	DeploymentName string `json:"deploymentName"`
 	StartupTime    string `json:"startupTime"`
+	BuildCommit    string `json:"buildCommit,omitempty"`
+	BuildTime      string `json:"buildTime,omitempty"`
 }
 
-type HealthCheckHandlerFunc = func() bool
-
-type DebugAPIOpt = func(*debugAPI)
-
-func AppName(appName string) DebugAPIOpt {
-	return func(debugAPI *debugAPI) {
-		debugAPI.appName = appName
-	}
+type debugAPI struct {
+	metricsPath     string
+	pprofPath       string
+	healthcheckPath string
+	response        *healthcheckResponse
 }
 
-func AppVersion(appVersion string) DebugAPIOpt {
-	return func(debugAPI *debugAPI) {
-		debugAPI.appVersion = appVersion
-	}
-}
-
-func DeploymentName(deploymentName string) DebugAPIOpt {
-	return func(debugAPI *debugAPI) {
-		debugAPI.deploymentName = deploymentName
-	}
-}
-
-func DebugAPI(engine *gin.Engine, opts ...DebugAPIOpt) {
+func DebugAPI(engine *gin.Engine, appInfo info.AppInfo) {
 	debugAPI := &debugAPI{
 		metricsPath:     "/debug/metrics",
 		pprofPath:       "/debug/pprof",
 		healthcheckPath: "/debug/health",
-		startupTime:     time.Now().UTC().Format(time.RFC3339),
+		response: &healthcheckResponse{
+			Status:         "healthy",
+			AppName:        appInfo.Name,
+			AppVersion:     appInfo.Version,
+			DeploymentName: appInfo.DeploymentName,
+			StartupTime:    appInfo.StartupTime,
+			BuildCommit:    appInfo.BuildCommit,
+			BuildTime:      appInfo.BuildTime,
+		},
 	}
 
 	metricsPath := config.String("debug.metrics.path")
@@ -74,10 +57,6 @@ func DebugAPI(engine *gin.Engine, opts ...DebugAPIOpt) {
 		debugAPI.healthcheckPath = healthcheckPath
 	}
 
-	for _, opt := range opts {
-		opt(debugAPI)
-	}
-
 	metrics := ginprometheus.NewPrometheus("gin")
 	metrics.MetricsPath = debugAPI.metricsPath
 	metrics.Use(engine)
@@ -88,22 +67,5 @@ func DebugAPI(engine *gin.Engine, opts ...DebugAPIOpt) {
 }
 
 func (api *debugAPI) healthCheck(c *gin.Context) {
-	if api.healthCheckHandler != nil {
-		if ok := api.healthCheckHandler(); !ok {
-			c.JSON(http.StatusInternalServerError, api.responseBody("unhealthy"))
-			return
-		}
-	}
-
-	c.JSON(http.StatusOK, api.responseBody("healthy"))
-}
-
-func (api *debugAPI) responseBody(status string) *healthcheckResponse {
-	return &healthcheckResponse{
-		Status:         status,
-		AppName:        api.appName,
-		AppVersion:     api.appVersion,
-		DeploymentName: api.deploymentName,
-		StartupTime:    api.startupTime,
-	}
+	c.JSON(http.StatusOK, api.response)
 }
