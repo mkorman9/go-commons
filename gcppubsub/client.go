@@ -50,12 +50,8 @@ func NewClient() (*Client, error) {
 	}
 
 	if projectID == "" {
-		projectID = os.Getenv("GOOGLE_PROJECT_ID")
-
-		if projectID == "" {
-			log.Warn().Msg("Empty gcp.projectId, using default")
-			projectID = "default-project-id"
-		}
+		log.Warn().Msg("Empty gcp.projectId, using default")
+		projectID = "default-project-id"
 	}
 
 	if emulatorEnabled {
