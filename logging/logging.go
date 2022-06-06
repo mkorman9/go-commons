@@ -52,14 +52,12 @@ func Setup(opts ...LoggingOpt) {
 	// try to resolve loggers from configuration
 	var loggerConfigs []*LoggerConfig
 	for i := 0; ; i++ {
-		key := fmt.Sprintf("logging.loggers.%d", i)
-
-		if !config.Exists(key) {
+		if !config.Exists(fmt.Sprintf("logging.loggers.%d", i+1)) { // "+1" to avoid a bug in Exists
 			break
 		}
 
 		var loggerConfig LoggerConfig
-		err = config.BindStruct(key, &loggerConfig)
+		err = config.BindStruct(fmt.Sprintf("logging.loggers.%d", i), &loggerConfig)
 		if err == nil {
 			loggerConfigs = append(loggerConfigs, &loggerConfig)
 		}
