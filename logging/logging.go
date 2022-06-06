@@ -50,22 +50,12 @@ func Setup(opts ...LoggingOpt) {
 	log.Logger = log.Output(defaultWriter)
 
 	// try to resolve loggers from configuration
-	var loggerConfigs []*LoggerConfig
-	for i := 0; ; i++ {
-		if !config.Exists(fmt.Sprintf("logging.loggers.%d", i+1)) { // "+1" to avoid a bug in Exists
-			break
-		}
-
-		var loggerConfig LoggerConfig
-		err = config.BindStruct(fmt.Sprintf("logging.loggers.%d", i), &loggerConfig)
-		if err == nil {
-			loggerConfigs = append(loggerConfigs, &loggerConfig)
-		}
-	}
+	var loggerConfigs []LoggerConfig
+	_ = config.BindStruct("logging.loggers", &loggerConfigs)
 
 	var writers []io.Writer
 	for _, loggerConfig := range loggerConfigs {
-		writer, err := createWriter(loggerConfig)
+		writer, err := createWriter(&loggerConfig)
 		if err != nil {
 			log.Warn().Err(err).Msg("Failed to configure log writer")
 		} else {
