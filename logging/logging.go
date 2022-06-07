@@ -56,8 +56,12 @@ func Setup(opts ...LoggingOpt) {
 	if config.Exists("logging.console") {
 		loggingConfig.console = consoleConfig{
 			enabled: config.Bool("logging.console.enabled") || !config.Exists("logging.console.enabled"),
-			colors:  config.Bool("logging.console.colors"),
+			colors:  config.Bool("logging.console.colors") || !config.Exists("logging.console.colors"),
 			format:  config.String("logging.console.format"),
+		}
+
+		if loggingConfig.console.format == "" {
+			loggingConfig.console.format = "text"
 		}
 	}
 	if config.Exists("logging.file") {
@@ -65,6 +69,10 @@ func Setup(opts ...LoggingOpt) {
 			enabled:  config.Bool("logging.file.enabled"),
 			location: config.String("logging.file.location"),
 			format:   config.String("logging.file.format"),
+		}
+
+		if loggingConfig.file.format == "" {
+			loggingConfig.file.format = "text"
 		}
 	}
 	if config.Exists("logging.gelf") {
