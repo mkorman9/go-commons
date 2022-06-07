@@ -27,7 +27,7 @@ func Setup(opts ...LoggingOpt) {
 			format:   "text",
 		},
 		gelf: gelfConfig{
-			enabled: true,
+			enabled: false,
 			address: "localhost:12201",
 		},
 	}
