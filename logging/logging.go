@@ -1,7 +1,6 @@
 package logging
 
 import (
-	"errors"
 	"fmt"
 	"github.com/gookit/config/v2"
 	"io"
@@ -16,7 +15,22 @@ import (
 )
 
 func Setup(opts ...LoggingOpt) {
-	loggingConfig := loggingConfig{}
+	loggingConfig := loggingConfig{
+		console: consoleConfig{
+			enabled: true,
+			colors:  true,
+			format:  "text",
+		},
+		file: fileConfig{
+			enabled:  false,
+			location: "log.txt",
+			format:   "text",
+		},
+		gelf: gelfConfig{
+			enabled: true,
+			address: "localhost:12201",
+		},
+	}
 	for _, opt := range opts {
 		opt(&loggingConfig)
 	}
@@ -39,28 +53,73 @@ func Setup(opts ...LoggingOpt) {
 	zerolog.DurationFieldInteger = true
 	zerolog.ErrorStackMarshaler = stackTraceMarshaller
 
-	// configure default logger
-	defaultWriter, _ := createWriter(
-		&LoggerConfig{
-			Output: "console",
-			Format: "text",
-			Text:   &TextConfig{Colors: true},
-		},
-	)
-	log.Logger = log.Output(defaultWriter)
+	if config.Exists("logging.console") {
+		loggingConfig.console = consoleConfig{
+			enabled: config.Bool("logging.console.enabled"),
+			colors:  config.Bool("logging.console.colors"),
+			format:  config.String("logging.console.format"),
+		}
+	}
+	if config.Exists("logging.file") {
+		loggingConfig.file = fileConfig{
+			enabled:  config.Bool("logging.file.enabled"),
+			location: config.String("logging.file.location"),
+			format:   config.String("logging.file.format"),
+		}
+	}
+	if config.Exists("logging.gelf") {
+		loggingConfig.gelf = gelfConfig{
+			enabled: config.Bool("logging.gelf.enabled"),
+			address: config.String("logging.gelf.address"),
+		}
+	}
 
-	// try to resolve loggers from configuration
-	var loggerConfigs []LoggerConfig
-	_ = config.BindStruct("logging.loggers", &loggerConfigs)
+	// default logger
+	log.Logger = log.Output(zerolog.ConsoleWriter{
+		Out:        os.Stderr,
+		NoColor:    false,
+		TimeFormat: "2006-01-02 15:04:05",
+	})
 
 	var writers []io.Writer
-	for _, loggerConfig := range loggerConfigs {
-		writer, err := createWriter(&loggerConfig)
+	if loggingConfig.console.enabled {
+		writer, err := configureFormat(os.Stderr, loggingConfig.console.format, loggingConfig.console.colors)
 		if err != nil {
-			log.Warn().Err(err).Msg("Failed to configure log writer")
-		} else {
-			writers = append(writers, writer)
+			log.Warn().Err(err).Msg("Failed to configure console logger")
+			return
 		}
+
+		writers = append(writers, writer)
+	}
+	if loggingConfig.file.enabled {
+		fileWriter, err := os.OpenFile(loggingConfig.file.location, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			log.Warn().Err(err).Msg("Failed to open file logger location")
+			return
+		}
+
+		writer, err := configureFormat(fileWriter, loggingConfig.file.format, false)
+		if err != nil {
+			log.Warn().Err(err).Msg("Failed to configure file logger")
+			return
+		}
+
+		writers = append(writers, writer)
+	}
+	if loggingConfig.gelf.enabled {
+		gelfWriter, err := gelf.NewWriter(loggingConfig.gelf.address)
+		if err != nil {
+			log.Warn().Err(err).Msg("Failed to create gelf logger connection")
+			return
+		}
+
+		writer, err := configureFormat(gelfWriter, "json", false)
+		if err != nil {
+			log.Warn().Err(err).Msg("Failed to configure gelf logger")
+			return
+		}
+
+		writers = append(writers, writer)
 	}
 
 	if len(writers) != 0 {
@@ -78,63 +137,19 @@ func Setup(opts ...LoggingOpt) {
 	}
 }
 
-func createWriter(loggerConfig *LoggerConfig) (io.Writer, error) {
-	logOutput, err := configureOutput(loggerConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	writer, err := configureFormat(loggerConfig, logOutput)
-	if err != nil {
-		return nil, err
-	}
-
-	return writer, nil
-}
-
-func configureOutput(loggerConfig *LoggerConfig) (io.Writer, error) {
-	if loggerConfig.Output == "gelf" {
-		if loggerConfig.Gelf == nil || len(loggerConfig.Gelf.Address) == 0 {
-			return nil, errors.New("logging output set to gelf but not properly configued")
-		}
-
-		gelfWriter, err := gelf.NewWriter(loggerConfig.Gelf.Address)
-		if err != nil {
-			return nil, err
-		}
-
-		return gelfWriter, nil
-	} else if loggerConfig.Output == "file" {
-		if loggerConfig.File == nil {
-			return nil, errors.New("logging output set to file but not properly configued")
-		}
-
-		fileWriter, err := os.OpenFile(loggerConfig.File.Location, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-		if err != nil {
-			return nil, err
-		}
-
-		return fileWriter, nil
-	} else if loggerConfig.Output == "console" {
-		return os.Stderr, nil
-	} else {
-		return nil, fmt.Errorf("unknown logging output: %v", loggerConfig.Output)
-	}
-}
-
-func configureFormat(loggerConfig *LoggerConfig, output io.Writer) (io.Writer, error) {
-	if loggerConfig.Format == "text" {
+func configureFormat(output io.Writer, format string, colors bool) (io.Writer, error) {
+	if format == "text" {
 		formattedOutput := zerolog.ConsoleWriter{
 			Out:        output,
-			NoColor:    !loggerConfig.Text.Colors,
+			NoColor:    !colors,
 			TimeFormat: "2006-01-02 15:04:05",
 		}
 
 		return &formattedOutput, nil
-	} else if loggerConfig.Format == "json" {
+	} else if format == "json" {
 		return output, nil
 	} else {
-		return nil, fmt.Errorf("unknown logging format: %v", loggerConfig.Format)
+		return nil, fmt.Errorf("unknown logging format: %v", format)
 	}
 }
 

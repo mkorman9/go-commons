@@ -1,7 +1,27 @@
 package logging
 
 type loggingConfig struct {
-	fields map[string]string
+	console consoleConfig
+	file    fileConfig
+	gelf    gelfConfig
+	fields  map[string]string
+}
+
+type consoleConfig struct {
+	enabled bool
+	colors  bool
+	format  string
+}
+
+type fileConfig struct {
+	enabled  bool
+	location string
+	format   string
+}
+
+type gelfConfig struct {
+	enabled bool
+	address string
 }
 
 type LoggingOpt func(*loggingConfig)
