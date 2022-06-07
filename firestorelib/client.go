@@ -13,11 +13,7 @@ import (
 
 var defaultConnectTimeout = 5 * time.Second
 
-type Client struct {
-	fs *firestore.Client
-}
-
-func NewClient() (*Client, error) {
+func NewClient() (*firestore.Client, func(), error) {
 	projectID := config.String("gcp.projectId")
 	emulatorEnabled := config.Bool("gcp.firestore.emulator.enabled")
 	emulatorAddress := config.String("gcp.firestore.emulator.address")
@@ -38,7 +34,7 @@ func NewClient() (*Client, error) {
 		}
 
 		if err := os.Setenv("FIRESTORE_EMULATOR_HOST", emulatorAddress); err != nil {
-			return nil, err
+			return nil, func() {}, err
 		}
 	} else {
 		options = append(options, option.WithCredentialsFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")))
@@ -54,29 +50,23 @@ func NewClient() (*Client, error) {
 	connectContext, cancel := context.WithTimeout(context.Background(), connectTimeout)
 	defer cancel()
 
-	client, err := firestore.NewClient(connectContext, projectID, options...)
+	fs, err := firestore.NewClient(connectContext, projectID, options...)
 	if err != nil {
-		return nil, err
+		return nil, func() {}, err
 	}
 
 	log.Info().Msg("Successfully connected to Firestore")
 
-	return &Client{
-		fs: client,
-	}, nil
+	return fs, func() { closeClient(fs) }, nil
 }
 
-func (client *Client) Close() {
+func closeClient(fs *firestore.Client) {
 	log.Debug().Msg("Closing Firestore connection")
 
-	err := client.fs.Close()
+	err := fs.Close()
 	if err == nil {
 		log.Info().Msg("Firestore connection closed successfully")
 	} else {
 		log.Error().Err(err).Msg("Error while closing Firestore connection")
 	}
-}
-
-func (client *Client) Get() *firestore.Client {
-	return client.fs
 }

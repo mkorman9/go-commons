@@ -10,11 +10,7 @@ import (
 	"time"
 )
 
-type RedisClient struct {
-	client *redis.Client
-}
-
-func NewConnection() (*RedisClient, error) {
+func DialRedis() (*redis.Client, func(), error) {
 	address := config.String("redis.address")
 	username := config.String("redis.username")
 	password := config.String("redis.password")
@@ -23,7 +19,7 @@ func NewConnection() (*RedisClient, error) {
 	connectionTimeoutValue := config.Int64("redis.timeouts.connection")
 
 	if address == "" {
-		return nil, errors.New("redis.address cannot be empty")
+		return nil, func() {}, errors.New("redis.address cannot be empty")
 	}
 
 	connectionTimeout := 5 * time.Second
@@ -49,22 +45,18 @@ func NewConnection() (*RedisClient, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
 	defer cancel()
 	if err := client.Ping(ctx).Err(); err != nil {
-		return nil, err
+		return nil, func() {}, err
 	} else {
 		log.Info().Msg("Successfully connected to Redis")
 	}
 
-	return &RedisClient{client}, nil
+	return client, func() { closeClient(client) }, nil
 }
 
-func (c *RedisClient) Get() *redis.Client {
-	return c.client
-}
-
-func (c *RedisClient) Close() {
+func closeClient(client *redis.Client) {
 	log.Debug().Msg("Closing Redis connection")
 
-	if err := c.client.Close(); err != nil {
+	if err := client.Close(); err != nil {
 		log.Error().Err(err).Msg("Error when closing Redis connection")
 	} else {
 		log.Info().Msg("Redis connection closed successfully")
