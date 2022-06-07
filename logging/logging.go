@@ -55,7 +55,7 @@ func Setup(opts ...LoggingOpt) {
 
 	if config.Exists("logging.console") {
 		loggingConfig.console = consoleConfig{
-			enabled: config.Bool("logging.console.enabled"),
+			enabled: config.Bool("logging.console.enabled") || !config.Exists("logging.console.enabled"),
 			colors:  config.Bool("logging.console.colors"),
 			format:  config.String("logging.console.format"),
 		}
