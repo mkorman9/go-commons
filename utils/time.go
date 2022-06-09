@@ -11,7 +11,7 @@ func TimePtrToUnix(t *time.Time) *int64 {
 		return nil
 	}
 
-	value := (*t).Unix()
+	value := (*t).UTC().Unix()
 	return &value
 }
 
@@ -20,6 +20,6 @@ func UnixPtrToTime(u *int64) *time.Time {
 		return nil
 	}
 
-	value := time.Unix(*u, 0)
+	value := time.Unix(*u, 0).UTC()
 	return &value
 }
