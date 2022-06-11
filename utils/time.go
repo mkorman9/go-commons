@@ -2,8 +2,8 @@ package utils
 
 import "time"
 
-func TimePtr(t time.Time) *time.Time {
-	return &t
+func ToPtr[V any](v V) *V {
+	return &v
 }
 
 func TimePtrToUnix(t *time.Time) *int64 {
