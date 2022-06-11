@@ -8,42 +8,40 @@ import (
 )
 
 const (
+	ErrUnknown          = iota
 	ErrUniqueViolation  = iota
 	ErrNotNullViolation = iota
 	ErrRecordNotFound   = iota
-	ErrInvalidValue     = iota
+	ErrInvalidText      = iota
 )
 
 type Error struct {
 	Err        error
 	Code       int
 	Constraint string
+	TableName  string
+	ColumnName string
 }
 
-func TranslateError(err error) (*Error, bool) {
-	postgresError := Error{Err: err, Code: -1}
+func TranslateError(err error) *pgconn.PgError {
+	return err.(*pgconn.PgError)
+}
 
+func ErrorCode(err error) int {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		postgresError.Code = ErrRecordNotFound
-		return &postgresError, true
+		return ErrRecordNotFound
 	}
 
 	if pgErr, ok := err.(*pgconn.PgError); ok {
 		switch pgErr.Code {
 		case "23502": // not_null_violation
-			postgresError.Code = ErrNotNullViolation
-			postgresError.Constraint = pgErr.ConstraintName
+			return ErrNotNullViolation
 		case "23505": // unique_violation
-			postgresError.Code = ErrUniqueViolation
-			postgresError.Constraint = pgErr.ConstraintName
+			return ErrUniqueViolation
 		case "22P02": // invalid_text_representation
-			postgresError.Code = ErrInvalidValue
+			return ErrInvalidText
 		}
 	}
 
-	if postgresError.Code != -1 {
-		return &postgresError, true
-	} else {
-		return nil, false
-	}
+	return ErrUnknown
 }
