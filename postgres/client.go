@@ -12,11 +12,11 @@ import (
 
 func DialPostgres() (*gorm.DB, func(), error) {
 	dsn := config.String("postgres.dsn")
-	printQueries := config.Bool("postgres.printQueries")
-	poolMaxOpen := config.Int("postgres.pool.maxOpen")
-	poolMaxIdle := config.Int("postgres.pool.maxIdle")
-	poolMaxLifeTimeValue := config.Int("postgres.pool.maxLifeTime")
-	poolMaxIdleTimeValue := config.Int("postgres.pool.maxIdleTime")
+	verbose := config.Bool("postgres.verbose")
+	poolMaxOpen := config.Int("postgres.pool.maxopen")
+	poolMaxIdle := config.Int("postgres.pool.maxidle")
+	poolMaxLifeTimeValue := config.Int("postgres.pool.maxlifetime")
+	poolMaxIdleTimeValue := config.Int("postgres.pool.maxidletime")
 
 	if dsn == "" {
 		return nil, func() {}, errors.New("postgres.dsn cannot be empty")
@@ -41,7 +41,7 @@ func DialPostgres() (*gorm.DB, func(), error) {
 	}
 
 	gormConfig := &gorm.Config{
-		Logger:      &gormLogger{printQueries: printQueries},
+		Logger:      &gormLogger{verbose: verbose},
 		NowFunc:     func() time.Time { return time.Now().UTC() },
 		QueryFields: true,
 	}

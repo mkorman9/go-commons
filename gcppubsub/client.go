@@ -36,13 +36,13 @@ type Client struct {
 }
 
 func NewClient() (*Client, error) {
-	projectID := config.String("gcp.projectId")
+	projectID := config.String("gcp.project")
 	emulatorEnabled := config.Bool("gcp.pubsub.emulator.enabled")
 	emulatorAddress := config.String("gcp.pubsub.emulator.address")
 	connectTimeoutValue := config.Int64("gcp.pubsub.timeouts.connect")
-	topicCreateTimeoutValue := config.Int64("gcp.pubsub.timeouts.topicCreate")
-	subscriptionCreateTimeoutValue := config.Int64("gcp.pubsub.timeouts.subscriptionCreate")
-	subscriptionDeleteTimeoutValue := config.Int64("gcp.pubsub.timeouts.subscriptionDelete")
+	topicCreateTimeoutValue := config.Int64("gcp.pubsub.timeouts.topic.create")
+	subscriptionCreateTimeoutValue := config.Int64("gcp.pubsub.timeouts.subscription.create")
+	subscriptionDeleteTimeoutValue := config.Int64("gcp.pubsub.timeouts.subscription.delete")
 	publishTimeoutValue := config.Int64("gcp.pubsub.timeouts.publish")
 
 	options := []option.ClientOption{
@@ -50,7 +50,7 @@ func NewClient() (*Client, error) {
 	}
 
 	if projectID == "" {
-		log.Warn().Msg("Empty gcp.projectId, using default")
+		log.Warn().Msg("Empty gcp.project, using default")
 		projectID = "default-project-id"
 	}
 

@@ -18,7 +18,7 @@ type Server struct {
 
 func NewServer() *Server {
 	address := config.String("server.address")
-	trustedProxies := config.Strings("server.trustedProxies")
+	trustedProxies := config.Strings("server.proxies")
 
 	if address == "" {
 		address = "0.0.0.0:8080"

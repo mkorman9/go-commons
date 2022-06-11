@@ -14,7 +14,7 @@ import (
 var defaultConnectTimeout = 5 * time.Second
 
 func NewClient() (*firestore.Client, func(), error) {
-	projectID := config.String("gcp.projectId")
+	projectID := config.String("gcp.project")
 	emulatorEnabled := config.Bool("gcp.firestore.emulator.enabled")
 	emulatorAddress := config.String("gcp.firestore.emulator.address")
 	connectTimeoutValue := config.Int64("gcp.firestore.timeouts.connect")
@@ -24,7 +24,7 @@ func NewClient() (*firestore.Client, func(), error) {
 	}
 
 	if projectID == "" {
-		log.Warn().Msg("Empty gcp.projectId, using default")
+		log.Warn().Msg("Empty gcp.project, using default")
 		projectID = "default-project-id"
 	}
 

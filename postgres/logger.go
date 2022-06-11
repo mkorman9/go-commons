@@ -9,7 +9,7 @@ import (
 )
 
 type gormLogger struct {
-	printQueries bool
+	verbose bool
 }
 
 func (l *gormLogger) LogMode(level logger.LogLevel) logger.Interface {
@@ -33,7 +33,7 @@ func (l *gormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 
 	if err != nil {
 		log.Warn().Err(err).Msgf("DB error for: '%s'", query)
-	} else if l.printQueries {
+	} else if l.verbose {
 		elapsed := time.Now().UTC().Sub(begin)
 		log.Debug().Msgf("DB query (%v) [%d rows]: '%s'", elapsed.String(), rows, query)
 	}
