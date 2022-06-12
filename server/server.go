@@ -19,6 +19,7 @@ type Server struct {
 func NewServer() *Server {
 	address := config.String("server.address")
 	trustedProxies := config.Strings("server.proxies")
+	mode := config.String("server.mode")
 
 	if address == "" {
 		address = "0.0.0.0:8080"
@@ -27,6 +28,12 @@ func NewServer() *Server {
 	if trustedProxies == nil {
 		trustedProxies = []string{"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.1/8"}
 	}
+
+	if mode == "" {
+		mode = "release"
+	}
+
+	gin.SetMode(mode)
 
 	engine := createEngine(trustedProxies)
 
