@@ -13,6 +13,10 @@ type QueryParamsParser func(string) interface{}
 type QueryParamsParsingRules = map[string]QueryParamsParser
 type QueryParamsMap = map[string]QueryParamValue
 
+func (queryParamValue QueryParamValue) Value() interface{} {
+	return queryParamValue.value
+}
+
 func (queryParamValue QueryParamValue) String() string {
 	s, ok := queryParamValue.value.(string)
 	if ok {
@@ -24,6 +28,15 @@ func (queryParamValue QueryParamValue) String() string {
 
 func (queryParamValue QueryParamValue) Int() int {
 	i, ok := queryParamValue.value.(int)
+	if ok {
+		return i
+	}
+
+	return 0
+}
+
+func (queryParamValue QueryParamValue) Int64() int64 {
+	i, ok := queryParamValue.value.(int64)
 	if ok {
 		return i
 	}
