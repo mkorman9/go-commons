@@ -1,4 +1,4 @@
-package server
+package httpserver
 
 import (
 	"context"
@@ -17,9 +17,9 @@ type Server struct {
 }
 
 func NewServer() *Server {
-	address := config.String("server.address")
-	trustedProxies := config.Strings("server.proxies")
-	mode := config.String("server.mode")
+	address := config.String("server.http.address")
+	trustedProxies := config.Strings("server.http.proxies")
+	mode := config.String("server.http.mode")
 
 	if address == "" {
 		address = "0.0.0.0:8080"
@@ -56,9 +56,9 @@ func (server *Server) Stop() {
 
 	err := server.HttpServer.Shutdown(context.Background())
 	if err != nil {
-		log.Error().Err(err).Msg("Error shutting down http server")
+		log.Error().Err(err).Msg("Error shutting down HTTP server")
 	} else {
-		log.Info().Msg("Server shutdown successful")
+		log.Info().Msg("HTTP server shutdown successful")
 	}
 }
 
